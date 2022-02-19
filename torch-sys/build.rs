@@ -168,6 +168,7 @@ fn make<P: AsRef<Path>>(libtorch: P, use_cuda: bool, use_hip: bool) {
                 .cpp(true)
                 .pic(true)
                 .warnings(false)
+                .include(PathBuf::from("/data/pella/projects/University/Thesis/Thesis/code/env/include/python3.9"))
                 .include(libtorch.as_ref().join("include"))
                 .include(libtorch.as_ref().join("include/torch/csrc/api/include"))
                 .flag(&format!("-Wl,-rpath={}", libtorch.as_ref().join("lib").display()))
@@ -220,6 +221,13 @@ fn main() {
             || libtorch.join("lib").join("torch_cuda_cpp.dll").exists();
         let use_hip = libtorch.join("lib").join("libtorch_hip.so").exists()
             || libtorch.join("lib").join("torch_hip.dll").exists();
+        let use_python = if true || cfg!(feature = "python") {
+            libtorch.join("lib").join("libtorch_python.so").exists()
+                || libtorch.join("lib").join("torch_python.dll").exists()
+        } else {
+            false
+        };
+
         println!("cargo:rustc-link-search=native={}", libtorch.join("lib").display());
 
         make(&libtorch, use_cuda, use_hip);
@@ -242,6 +250,9 @@ fn main() {
         println!("cargo:rustc-link-lib=c10");
         if use_hip {
             println!("cargo:rustc-link-lib=c10_hip");
+        }
+        if use_python {
+            println!("cargo:rustc-link-lib=torch_python");
         }
 
         let target = env::var("TARGET").unwrap();
